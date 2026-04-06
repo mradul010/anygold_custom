@@ -1,7 +1,7 @@
 app_name = "anygold_custom"
-app_title = "Any Gold Custom"
+app_title = "Anygold Custom"
 app_publisher = "Vigisolvo Private Limited"
-app_description = "Any Gold Custom by Vigisolvo Private Limited"
+app_description = "Anygold Custom by Vigisolvo Private Limited"
 app_email = "mradulmishra010@gmail.com"
 app_license = "mit"
 
@@ -15,7 +15,7 @@ app_license = "mit"
 # 	{
 # 		"name": "anygold_custom",
 # 		"logo": "/assets/anygold_custom/logo.png",
-# 		"title": "Any Gold Custom",
+# 		"title": "Anygold Custom",
 # 		"route": "/anygold_custom",
 # 		"has_permission": "anygold_custom.api.permission.has_app_permission"
 # 	}

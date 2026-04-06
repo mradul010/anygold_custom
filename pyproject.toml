@@ -3,7 +3,7 @@ name = "anygold_custom"
 authors = [
     { name = "Vigisolvo Private Limited", email = "mradulmishra010@gmail.com"}
 ]
-description = "Any Gold Custom by Vigisolvo Private Limited"
+description = "Anygold Custom by Vigisolvo Private Limited"
 requires-python = ">=3.14"
 readme = "README.md"
 dynamic = ["version"]

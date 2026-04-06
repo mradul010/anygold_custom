@@ -1,6 +1,6 @@
-### Any Gold Custom
+### Anygold Custom
 
-Any Gold Custom by Vigisolvo Private Limited
+Anygold Custom by Vigisolvo Private Limited
 
 ### Installation
 
