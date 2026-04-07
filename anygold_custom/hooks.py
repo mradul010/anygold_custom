@@ -7,7 +7,6 @@ app_license = "mit"
 
 app_include_css = "/assets/anygold_custom/css/app.css"
 app_home = "/desk/any-gold"
-fixtures = ["Workspace"]
 add_to_apps_screen = [
     {
         "name": app_name,
