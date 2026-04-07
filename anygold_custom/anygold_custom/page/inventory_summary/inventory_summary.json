@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2026-04-07 18:46:10.651617",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-04-07 18:46:10.651617",
+ "modified_by": "Administrator",
+ "module": "Anygold Custom",
+ "name": "inventory-summary",
+ "owner": "Administrator",
+ "page_name": "inventory-summary",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Inventory Summary"
+}

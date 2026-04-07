@@ -5,6 +5,17 @@ app_description = "Anygold Custom by Vigisolvo Private Limited"
 app_email = "mradulmishra010@gmail.com"
 app_license = "mit"
 
+app_include_css = "/assets/anygold_custom/css/app.css"
+app_home = "/desk/any-gold"
+
+add_to_apps_screen = [
+    {
+        "name": app_name,
+        "logo": "/anygold-logo.png",
+        "title": app_title,
+        "route": app_home,
+    }
+]
 # Apps
 # ------------------
 
