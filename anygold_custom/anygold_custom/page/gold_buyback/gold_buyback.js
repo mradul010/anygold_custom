@@ -17,6 +17,7 @@ frappe.pages["gold-buyback"].on_page_show = async function (wrapper) {
 const GOLD_BUYBACK_STYLE_ID = "anygold-gold-buyback-css";
 const GOLD_BUYBACK_STYLE_HREF = "/assets/anygold_custom/css/main.css";
 const GOLD_BUYBACK_BUNDLE_PATHS = [
+	"/assets/anygold_custom/modules/gold-buyback/gold_buyback.bundle.js",
 	"/assets/anygold_custom/js/gold_buyback.bundle.js",
 	"gold_buyback.bundle.js",
 ];
