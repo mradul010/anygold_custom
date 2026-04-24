@@ -5,7 +5,10 @@ app_description = "Anygold Custom by Vigisolvo Private Limited"
 app_email = "mradulmishra010@gmail.com"
 app_license = "mit"
 
-app_include_css = "/assets/anygold_custom/css/app.css"
+# NOTE:
+# Keep Gold Buyback styling page-scoped from its page JS.
+# Global injection caused Desk UI regressions on standard ERPNext pages.
+# app_include_css = "/assets/anygold_custom/css/main.css"
 app_home = "/desk/any-gold"
 add_to_apps_screen = [
     {
@@ -15,6 +18,111 @@ add_to_apps_screen = [
         "route": app_home,
     }
 ]
+
+fixtures = [
+    {"dt": "Custom Field", "filters": [["module", "=", "Anygold Custom"]]},
+    {"dt": "Property Setter", "filters": [["module", "=", "Anygold Custom"]]}
+]
+
+fixtures = [
+
+    # ---------------- ITEM ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Item"]]
+    },
+
+    # ---------------- ITEM GROUP ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Item Group"]]
+    },
+
+    # ---------------- CUSTOMER ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Customer"]]
+    },
+
+    # ---------------- SUPPLIER ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Supplier"]]
+    },
+
+    # ---------------- SALES ORDER ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Sales Order"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Sales Order Item"]]
+    },
+
+    # ---------------- SALES INVOICE ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Sales Invoice"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Sales Invoice Item"]]
+    },
+
+    # ---------------- PURCHASE ORDER ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Order"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Order Item"]]
+    },
+
+    # ---------------- PURCHASE INVOICE ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Invoice"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Invoice Item"]]
+    },
+
+    # ---------------- PURCHASE RECEIPT ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Receipt"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Purchase Receipt Item"]]
+    },
+
+    # ---------------- STOCK ENTRY ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Stock Entry"]]
+    },
+
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Stock Entry Detail"]]
+    }
+
+]
+
+doc_events = {
+    "Customer": {
+        "after_insert": "anygold_custom.api.customer.create_supplier_for_customer"
+    }
+}
 # Apps
 # ------------------
 
@@ -259,4 +367,3 @@ add_to_apps_screen = [
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
