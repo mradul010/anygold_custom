@@ -16,11 +16,14 @@ frappe.pages["gold-buyback"].on_page_show = async function (wrapper) {
 
 const GOLD_BUYBACK_STYLE_ID = "anygold-gold-buyback-css";
 const GOLD_BUYBACK_STYLE_HREF = "/assets/anygold_custom/css/main.css";
+const GOLD_BUYBACK_BUNDLE_KEY = "gold_buyback.bundle.js";
 const GOLD_BUYBACK_BUNDLE_PATHS = [
 	"/assets/anygold_custom/modules/gold-buyback/gold_buyback.bundle.js",
 	"/assets/anygold_custom/js/gold_buyback.bundle.js",
-	"gold_buyback.bundle.js",
+	"/assets/anygold_custom/dist/js/gold_buyback.bundle.js",
+	"/assets/anygold_custom/gold_buyback.bundle.js",
 ];
+const GOLD_BUYBACK_SCRIPT_ID = "anygold-gold-buyback-bundle-script";
 let has_route_style_guard = false;
 let gold_buyback_load_seq = 0;
 
@@ -115,10 +118,16 @@ function unmount_stale_gold_buyback_app() {
 async function ensure_gold_buyback_setup_loaded() {
 	if (typeof frappe.ui.setup_gold_buyback === "function") return;
 
+	const mapped = frappe?.boot?.assets_json?.[GOLD_BUYBACK_BUNDLE_KEY];
+	const bundle_paths = mapped ? [mapped, ...GOLD_BUYBACK_BUNDLE_PATHS] : GOLD_BUYBACK_BUNDLE_PATHS;
+	const seen = new Set();
 	const load_errors = [];
-	for (const bundle_path of GOLD_BUYBACK_BUNDLE_PATHS) {
+	for (const bundle_path of bundle_paths) {
+		if (!bundle_path || seen.has(bundle_path)) continue;
+		seen.add(bundle_path);
+
 		try {
-			await frappe.require(bundle_path);
+			await load_script_direct(bundle_path);
 
 			// Allow setup registration to settle after script eval.
 			for (let i = 0; i < 8 && typeof frappe.ui.setup_gold_buyback !== "function"; i++) {
@@ -134,4 +143,31 @@ async function ensure_gold_buyback_setup_loaded() {
 	}
 
 	throw new Error(`Unable to load Gold Buyback bundle. ${load_errors.join(" | ")}`);
+}
+
+function load_script_direct(src) {
+	return new Promise((resolve, reject) => {
+		const normalized = new URL(src, window.location.origin).toString();
+		const existing = Array.from(document.querySelectorAll("script[data-gold-buyback-bundle='1']"))
+			.find((el) => el.src === normalized);
+
+		if (existing) {
+			if (existing.dataset.loaded === "1") return resolve();
+			existing.addEventListener("load", () => resolve(), { once: true });
+			existing.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+			return;
+		}
+
+		const script = document.createElement("script");
+		script.id = `${GOLD_BUYBACK_SCRIPT_ID}-${Math.random().toString(36).slice(2, 8)}`;
+		script.src = normalized;
+		script.async = true;
+		script.dataset.goldBuybackBundle = "1";
+		script.onload = () => {
+			script.dataset.loaded = "1";
+			resolve();
+		};
+		script.onerror = () => reject(new Error(`Failed to load ${src}`));
+		document.head.appendChild(script);
+	});
 }
