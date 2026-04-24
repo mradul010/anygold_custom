@@ -1,0 +1,251 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "GBB-.YYYY.-.#####",
+ "creation": "2026-04-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "posting_time",
+  "column_break_datetime",
+  "edit_posting_datetime",
+  "item_not_in_hand",
+  "section_break_customer",
+  "customer_name",
+  "customer_ic",
+  "column_break_customer",
+  "customer_mobile",
+  "customer_type",
+  "section_break_payment",
+  "payment_method",
+  "bank_account",
+  "column_break_payment",
+  "default_bag",
+  "company",
+  "section_break_totals",
+  "total_gross_weight",
+  "total_net_weight",
+  "total_amount",
+  "column_break_totals",
+  "discount",
+  "rounding",
+  "grand_total",
+  "total_xau",
+  "section_break_balance",
+  "customer_account_amount",
+  "projected_balance",
+  "status",
+  "section_break_tables",
+  "items",
+  "mix_payments",
+  "payload_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Posting Time"
+  },
+  {
+   "fieldname": "column_break_datetime",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "edit_posting_datetime",
+   "fieldtype": "Check",
+   "label": "Edit Posting Date and Time"
+  },
+  {
+   "fieldname": "item_not_in_hand",
+   "fieldtype": "Check",
+   "label": "Item Not In Hand"
+  },
+  {
+   "fieldname": "section_break_customer",
+   "fieldtype": "Section Break",
+   "label": "Customer"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer_ic",
+   "fieldtype": "Data",
+   "label": "Customer IC"
+  },
+  {
+   "fieldname": "column_break_customer",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer_mobile",
+   "fieldtype": "Data",
+   "label": "Customer Mobile"
+  },
+  {
+   "fieldname": "customer_type",
+   "fieldtype": "Data",
+   "label": "Customer Type"
+  },
+  {
+   "fieldname": "section_break_payment",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Method",
+   "options": "\nbank\ncash\ncustacct\nmix"
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Data",
+   "label": "Bank Account"
+  },
+  {
+   "fieldname": "column_break_payment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_bag",
+   "fieldtype": "Data",
+   "label": "Default Bag"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_totals",
+   "fieldtype": "Section Break",
+   "label": "Totals"
+  },
+  {
+   "fieldname": "total_gross_weight",
+   "fieldtype": "Float",
+   "label": "Total Gross Weight"
+  },
+  {
+   "fieldname": "total_net_weight",
+   "fieldtype": "Float",
+   "label": "Total Net Weight"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount"
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "discount",
+   "fieldtype": "Currency",
+   "label": "Discount"
+  },
+  {
+   "fieldname": "rounding",
+   "fieldtype": "Check",
+   "label": "Rounding"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total"
+  },
+  {
+   "fieldname": "total_xau",
+   "fieldtype": "Float",
+   "label": "Total XAU"
+  },
+  {
+   "fieldname": "section_break_balance",
+   "fieldtype": "Section Break",
+   "label": "Balance Projection"
+  },
+  {
+   "fieldname": "customer_account_amount",
+   "fieldtype": "Currency",
+   "label": "Customer Account Amount"
+  },
+  {
+   "fieldname": "projected_balance",
+   "fieldtype": "Currency",
+   "label": "Projected Balance"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\ndraft\nsaved\nsubmitted"
+  },
+  {
+   "fieldname": "section_break_tables",
+   "fieldtype": "Section Break",
+   "label": "Rows"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Gold Buyback Submission Item"
+  },
+  {
+   "fieldname": "mix_payments",
+   "fieldtype": "Table",
+   "label": "Mix Payments",
+   "options": "Gold Buyback Submission Payment"
+  },
+  {
+   "fieldname": "payload_json",
+   "fieldtype": "Long Text",
+   "label": "Payload JSON",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Anygold Custom",
+ "name": "Gold Buyback Submission",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
+

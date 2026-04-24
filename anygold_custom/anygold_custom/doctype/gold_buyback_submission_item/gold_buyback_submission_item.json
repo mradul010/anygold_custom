@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "creation": "2026-04-22 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "description",
+  "purity",
+  "gross_weight",
+  "net_weight",
+  "rate",
+  "amount",
+  "lock_id",
+  "overage_ack",
+  "bag",
+  "deductions_weight",
+  "deductions_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "purity",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Purity"
+  },
+  {
+   "fieldname": "gross_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Gross Weight"
+  },
+  {
+   "fieldname": "net_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Net Weight"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Rate"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "lock_id",
+   "fieldtype": "Data",
+   "label": "Lock ID"
+  },
+  {
+   "fieldname": "overage_ack",
+   "fieldtype": "Check",
+   "label": "Overage Acknowledged"
+  },
+  {
+   "fieldname": "bag",
+   "fieldtype": "Data",
+   "label": "Bag"
+  },
+  {
+   "fieldname": "deductions_weight",
+   "fieldtype": "Float",
+   "label": "Deductions Weight"
+  },
+  {
+   "fieldname": "deductions_json",
+   "fieldtype": "Small Text",
+   "label": "Deductions JSON"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Anygold Custom",
+ "name": "Gold Buyback Submission Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
