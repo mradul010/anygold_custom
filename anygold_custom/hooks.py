@@ -13,7 +13,7 @@ app_home = "/desk/any-gold"
 add_to_apps_screen = [
     {
         "name": app_name,
-        "logo": "/anygold-logo.png",
+        "logo": "/assets/anygold_custom/anygold-logo.png",
         "title": app_title,
         "route": app_home,
     }
