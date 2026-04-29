@@ -9,6 +9,7 @@
         :value="item.desc"
         :autoFocus="isLastAdded"
         @change="v => gb.updItem(item.id, 'desc', v)"
+        @select="onDescSelect"
       />
     </td>
 
@@ -222,6 +223,13 @@ const ovgAmt = computed(() => {
   const net = props.item.net || props.item.gross || 0
   return net - gb.getLockRem(props.item.lockId, props.item.id)
 })
+
+const onDescSelect = (selected) => {
+  gb.updItem(props.item.id, 'desc', selected.display_value || selected.item_name || selected.name || '')
+  if (selected.purity) {
+    gb.updItem(props.item.id, 'purity', String(selected.purity))
+  }
+}
 
 // ── CALC COMMIT ──
 // Uses refs (gCur/rCur/aCur) instead of display state to avoid stale closures

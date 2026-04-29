@@ -1,7 +1,7 @@
 <template>
   <teleport to="body">
-    <div class="overlay">
-      <div class="modal" style="width: 440px">
+    <div class="gb-overlay">
+      <div class="gb-modal" style="width: 440px">
         <div class="modal-hdr">
           <h3>⚠️ Confirm Submission</h3>
           <button class="modal-x" @click="$emit('close')">✕</button>

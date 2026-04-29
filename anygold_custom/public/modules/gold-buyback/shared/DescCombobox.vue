@@ -28,7 +28,7 @@
           @mouseleave="e => e.currentTarget.style.background = ''"
         >{{ s.item_name || s.name }}</div>
         <div
-          v-if="text.trim() && !filtered.some(s => (s.item_name || s.name).toUpperCase() === text.toUpperCase())"
+          v-if="text.trim() && !filtered.some(s => (s.item_name || s.name || '').toUpperCase() === text.toUpperCase())"
           class="combobox-add"
           @mousedown.prevent="commitCustom"
         >+ Add "{{ text.toUpperCase() }}" to List</div>
@@ -45,7 +45,7 @@ const props = defineProps({
   value:     { type: String, default: '' },
   autoFocus: { type: Boolean, default: false }
 })
-const emit = defineEmits(['change'])
+const emit = defineEmits(['change', 'select'])
 
 const inputRef = ref(null)
 const text = ref(props.value || '')
@@ -57,7 +57,12 @@ watch(() => props.value, (v) => { text.value = v || '' })
 
 const filtered = computed(() => {
   const q = text.value.toUpperCase()
-  return q ? suggestions.value.filter(s => s.item_name.toUpperCase().includes(q) || s.name.toUpperCase().includes(q)) : suggestions.value.slice(0, 20)
+  return q
+    ? suggestions.value.filter(s =>
+        (s.item_name || '').toUpperCase().includes(q) ||
+        (s.name || '').toUpperCase().includes(q)
+      )
+    : suggestions.value.slice(0, 20)
 })
 
 const fetchSuggestions = async () => {
@@ -68,9 +73,9 @@ const fetchSuggestions = async () => {
       method: "frappe.client.get_list",
       args: {
         doctype: "Item",
-        fields: ["name", "item_name"],
+        fields: ["name", "item_name", "purity"],
         order_by: "modified desc",
-        limit_page_length: 5
+        limit_page_length: 20
       }
     })
     suggestions.value = res.message || []
@@ -95,9 +100,11 @@ const openDD = () => {
 }
 
 const commit = (s) => {
-  const val = (s.item_name || s.name).toUpperCase()
+  const item = typeof s === 'string' ? null : s
+  const val = (item ? (item.item_name || item.name) : s).toUpperCase()
   text.value = val
   emit('change', val)
+  if (item) emit('select', { ...item, display_value: val })
   open.value = false
 }
 
@@ -118,6 +125,10 @@ const onFocus = (e) => {
 
 const onBlur = () => {
   setTimeout(() => { open.value = false }, 150)
+  const exact = suggestions.value.find(s =>
+    (s.item_name || s.name || '').toUpperCase() === text.value.toUpperCase()
+  )
+  if (exact) emit('select', { ...exact, display_value: text.value.toUpperCase() })
   emit('change', text.value)
 }
 
