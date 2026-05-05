@@ -5,7 +5,7 @@
     <div v-if="!gb.niH.value" class="bag-bar">
       <label>Bag Destination</label>
       <select class="field-input" style="max-width: 260px" v-model="gb.defBag.value">
-        <option v-for="b in warehouses" :key="b">{{ b }}</option>
+        <option v-for="b in gb.bagOptions.value" :key="b">{{ b }}</option>
         <option>+ Create New Bag</option>
       </select>
     </div>
@@ -20,29 +20,7 @@
 </template>
 
 <script setup>
-import { inject, ref, onMounted } from 'vue'
+import { inject } from 'vue'
 
 const gb = inject('gb')
-
-const warehouses = ref([])
-
-const fetchWarehouses = async () => {
-  const res = await frappe.call({
-    method: "frappe.client.get_list",
-    args: {
-      doctype: "Warehouse",
-      fields: ["name"],
-      filters: {
-        is_group: 0   // only leaf warehouses
-      },
-      limit_page_length: 100
-    }
-  })
-
-  warehouses.value = res.message?.map(w => w.name) || []
-}
-
-onMounted(() => {
-  fetchWarehouses()
-})
 </script>

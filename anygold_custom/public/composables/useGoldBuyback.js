@@ -2,6 +2,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { PURITY_XAU, PM_LABELS, BAG_OPTIONS, MOCK_CASH_BALANCE } from '../constants/index.js'
 import { MOCK_CUSTOMERS, MOCK_LOCKS } from '../constants/mockData.js'
 import { fmtRM, fmtWt, fmtWtRaw, dedNoteText, parseVal } from '../utils/formatters.js'
+import { resolveGoldBuybackItemCode } from '../utils/goldBuybackHelpers.js'
 
 // ── ITEM FACTORY ──
 // gross_weight: physical scale weight — stored for bag stock tally reconciliation
@@ -10,14 +11,16 @@ const mkItem = (id, prefill = false) => ({
   id,
   desc: '',
   purity: prefill ? '916' : '',
+  item_code: prefill ? resolveGoldBuybackItemCode('916', []) : '',
   gross: 0,
-  deds: [],   // [{ type, w, desc }]
+  deds: [],       // [{ type, w, desc }]
   net: 0,
   rate: 0,
   amount: 0,
-  lockId: null,      // references BLOK-DDMMYY-XXX document
+  lockId: null,   // references BLOK-DDMMYY-XXX document
   overageAck: false,
-  bag: null          // null = use document default bag (warehouse)
+  bag: null,      // null = use document default bag
+  warehouse: null // null = resolved by submit.py from bag/default
 })
 
 const getDocDateKey = () => {
@@ -71,6 +74,8 @@ export function useGoldBuyback() {
 
   // ── BAG ──
   const defBag = ref('WS-Main Bag')
+  const bagOptions = ref([])    // warehouse doc names under "Wholesale Bags - AGSB"
+  const purityOptions = ref([]) // [{purity_code, xau_coefficient}] from Purity Master
 
   // ── TOTALS ──
   const round = ref(false)
@@ -151,6 +156,8 @@ export function useGoldBuyback() {
     time.value = new Date().toTimeString().slice(0, 8)
     isMobile.value = window.innerWidth <= 768
     fetchCompanyPaymentSetup()
+    fetchBagOptions()
+    fetchPurityOptions()
     window.addEventListener('resize', handleResize)
     document.addEventListener('mousedown', handleOutsideClick)
     document.addEventListener('keydown', handleKeydown)
@@ -186,6 +193,37 @@ export function useGoldBuyback() {
       if (r.bank_account) return r
       return { ...r, bank_account: fallback }
     })
+  }
+
+  const fetchBagOptions = async () => {
+    if (bagOptions.value.length) return
+    try {
+      const res = await frappe.call({
+        method: 'frappe.client.get_list',
+        args: {
+          doctype: 'Warehouse',
+          fields: ['name'],
+          filters: { is_group: 0, parent_warehouse: 'Wholesale Bags - AGSB' },
+          limit_page_length: 100
+        }
+      })
+      bagOptions.value = (res.message || []).map(w => w.name)
+      if (bagOptions.value.length) defBag.value = bagOptions.value[0]
+    } catch (e) {
+      console.warn('Failed to fetch bag options', e)
+    }
+  }
+
+  const fetchPurityOptions = async () => {
+    if (purityOptions.value.length) return
+    try {
+      const res = await frappe.call({
+        method: 'anygold_custom.api.GoldBuyBack.items.get_purity_master'
+      })
+      purityOptions.value = res.message || []
+    } catch (e) {
+      console.warn('Failed to fetch purity options, using defaults', e)
+    }
   }
 
   const fetchCompanyPaymentSetup = async () => {
@@ -304,8 +342,8 @@ export function useGoldBuyback() {
     items.value
       .filter(i => (i.net || i.gross || 0) > 0)
       .map(i => ({
-        item: `Gold ${i.purity}`,
-        wh:   i.bag || defBag.value,
+        item: i.item_code || (i.purity ? `WS-${i.purity}-?` : '—'),
+        wh:   i.warehouse || i.bag || defBag.value,
         xau:  ((i.net || i.gross || 0) * (PURITY_XAU[i.purity] || 0)).toFixed(3),
         nw:   fmtWt(i.net || i.gross || 0),
         gw:   fmtWt(i.gross || 0)
@@ -413,9 +451,14 @@ export function useGoldBuyback() {
     items.value = items.value.map(item => {
       if (item.id !== id) return item
       const u = { ...item, [field]: val }
-      if (field === 'purity' && item.lockId) {
-        const lk = locks.value.find(l => l.id === item.lockId)
-        if (lk && lk.purity !== val) { u.lockId = null; u.rate = 0; u.amount = 0 }
+      if (field === 'purity') {
+        // Recalculate item code whenever purity changes.
+        u.item_code = resolveGoldBuybackItemCode(val, item.deds)
+        // Clear mismatched rate lock.
+        if (item.lockId) {
+          const lk = locks.value.find(l => l.id === item.lockId)
+          if (lk && lk.purity !== val) { u.lockId = null; u.rate = 0; u.amount = 0 }
+        }
       }
       return u
     })
@@ -465,7 +508,8 @@ export function useGoldBuyback() {
       if (item.id !== id) return item
       const net = item.gross || 0
       const amt = item.rate > 0 ? parseFloat((net * item.rate).toFixed(2)) : item.amount
-      return { ...item, deds: [], net, amount: amt }
+      // No deductions → suffix switches back to -N
+      return { ...item, deds: [], net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, []) }
     })
   }
 
@@ -475,7 +519,8 @@ export function useGoldBuyback() {
       const deds = rows.reduce((s, r) => s + (parseFloat(r.w) || 0), 0)
       const net = Math.max(0, (item.gross || 0) - deds)
       const amt = item.rate > 0 ? parseFloat((net * item.rate).toFixed(2)) : item.amount
-      return { ...item, deds: rows, net, amount: amt }
+      // Deductions present → suffix switches to -EBTS
+      return { ...item, deds: rows, net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, rows) }
     })
   }
 
@@ -528,10 +573,11 @@ export function useGoldBuyback() {
       id: newId,
       desc: item.desc ? item.desc + ' (excess)' : '(excess)',
       purity: item.purity,
+      item_code: resolveGoldBuybackItemCode(item.purity, []), // excess has no deds
       gross: parseFloat(excess.toFixed(3)),
       net:   parseFloat(excess.toFixed(3)),
       deds: [], rate: 0, amount: 0,
-      lockId: null, overageAck: false, bag: null
+      lockId: null, overageAck: false, bag: null, warehouse: null
     }
     const idx = items.value.findIndex(i => i.id === id)
     const updated = items.value.map(i =>
@@ -548,6 +594,15 @@ export function useGoldBuyback() {
   const removeMixRow = (id) => {
     mixRows.value = mixRows.value.filter(r => r.id !== id)
   }
+  // Set both bag and warehouse for a single item row.
+  // bag = warehouse = the Warehouse document name (they are the same thing in this system).
+  // Pass null to clear back to default.
+  const pickBagForItem = (id, bag, warehouse) => {
+    items.value = items.value.map(item =>
+      item.id === id ? { ...item, bag, warehouse } : item
+    )
+  }
+
   const updateMixRow = (id, field, val) => {
     mixRows.value = mixRows.value.map(r => {
       if (r.id !== id) return r
@@ -571,7 +626,7 @@ export function useGoldBuyback() {
   //          Locked. Corrections via Cancel & Amend (creates PUR-xxx-1).
   // ════════════════════════════════════════
 
-  const goReview = () => {
+  const goReview = async () => {
     // Auto-delete fully empty lines silently
     items.value = items.value.filter(i => i.desc || (i.gross || 0) > 0 || (i.rate || 0) > 0)
 
@@ -588,7 +643,7 @@ export function useGoldBuyback() {
       if (badBankRows.length) errs.push('Please select bank account for all Bank Transfer rows in mixed payment.')
     }
     const filledItems = items.value.filter(i => i.desc || i.purity || (i.gross || 0) > 0 || (i.rate || 0) > 0)
-    const partialItems = filledItems.filter(i => !i.desc || !(i.gross > 0) || !i.purity)
+    const partialItems = filledItems.filter(i => !i.desc || !(i.gross > 0) || !i.purity || !i.item_code)
     if (!filledItems.length) {
       errs.push('At least one item is required.')
     } else if (partialItems.length > 0) {
@@ -598,6 +653,13 @@ export function useGoldBuyback() {
     validationErrors.value = []
 
     if (unresolved.value.length > 0) { ovgModal.value = true; return }
+
+    // Fetch the next document number from the backend (preview — actual name assigned on submit)
+    try {
+      const res = await frappe.call({ method: 'anygold_custom.api.GoldBuyBack.submit.get_next_doc_no' })
+      if (res.message) docNo.value = res.message
+    } catch (_) { /* keep locally generated fallback */ }
+
     status.value = 'saved'
     view.value = 'review'
   }
@@ -625,6 +687,7 @@ export function useGoldBuyback() {
           id: i.id,
           desc: i.desc,
           purity: i.purity,
+          item_code: i.item_code || resolveGoldBuybackItemCode(i.purity, i.deds),
           gross: i.gross || 0,
           net: i.net || i.gross || 0,
           deds: i.deds || [],
@@ -632,7 +695,8 @@ export function useGoldBuyback() {
           amount: i.amount || 0,
           lockId: i.lockId || null,
           overageAck: !!i.overageAck,
-          bag: niH.value ? 'WS-Not In Hand' : (i.bag || defBag.value)
+          bag: niH.value ? 'WS-Not In Hand' : (i.bag || defBag.value),
+          warehouse: niH.value ? null : (i.warehouse || null)
         }))
 
       const submitMixRows = pm.value === 'mix'
@@ -677,9 +741,10 @@ export function useGoldBuyback() {
       })
 
       if (result.message.status === 'success') {
+        // Update to the real backend-assigned document name (GBB-YYYY-NNNNN)
+        if (result.message.submission) docNo.value = result.message.submission
         status.value = 'submitted'
         view.value = 'submitted'
-        // Could store the journal entry reference
         console.log('Submission successful:', result.message)
       } else {
         throw new Error(result.message.message || 'Submission failed')
@@ -726,7 +791,7 @@ export function useGoldBuyback() {
     company,
     pm, mixRows,
     bankAccounts, bankAccount, loadingPaymentAccounts,
-    defBag, items, lastAddedId,
+    defBag, bagOptions, purityOptions, items, lastAddedId,
     round, disc, discDisp,
     locks, lockOpen, lockPop, bagPop,
     dedModal, showNewCust, ovgModal, glOpen,
@@ -744,6 +809,7 @@ export function useGoldBuyback() {
     pickCust, saveCust,
     addItem, removeItem, updItem, recalc,
     clearDed, applyDeds,
+    pickBagForItem,
     applyLock, removeLock, keepRate, splitExcess, getLockRem,
     addMixRow, removeMixRow, updateMixRow,
     goReview, confirmOvg, goSubmit, newPurchase,

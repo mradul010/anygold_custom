@@ -7,6 +7,7 @@
  "field_order": [
   "description",
   "purity",
+  "item_code",
   "gross_weight",
   "net_weight",
   "rate",
@@ -14,6 +15,7 @@
   "lock_id",
   "overage_ack",
   "bag",
+  "warehouse",
   "deductions_weight",
   "deductions_json"
  ],
@@ -29,6 +31,12 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Purity"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
   },
   {
    "fieldname": "gross_weight",
@@ -67,6 +75,12 @@
    "fieldname": "bag",
    "fieldtype": "Data",
    "label": "Bag"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
   },
   {
    "fieldname": "deductions_weight",

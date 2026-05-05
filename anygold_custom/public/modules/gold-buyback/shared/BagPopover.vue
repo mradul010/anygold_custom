@@ -16,8 +16,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { BAG_OPTIONS } from '../../../constants/index.js'
+import { computed, inject } from 'vue'
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -25,9 +24,10 @@ const props = defineProps({
 })
 defineEmits(['select'])
 
-// First option is "Default" (null val), rest are the actual bags
+const gb = inject('gb')
+
 const opts = computed(() => [
-  { val: null, label: 'Default (WS-Main Bag)' },
-  ...BAG_OPTIONS.slice(1).map(b => ({ val: b, label: b }))
+  { val: null, label: 'Default' },
+  ...(gb.bagOptions.value || []).map(b => ({ val: b, label: b }))
 ])
 </script>

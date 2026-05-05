@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "is_submittable": 1,
  "autoname": "GBB-.YYYY.-.#####",
  "creation": "2026-04-22 00:00:00.000000",
  "doctype": "DocType",
@@ -17,12 +18,18 @@
   "column_break_customer",
   "customer_mobile",
   "customer_type",
+  "customer",
   "section_break_payment",
   "payment_method",
   "bank_account",
   "column_break_payment",
   "default_bag",
   "company",
+  "section_break_accounting",
+  "inventory_account",
+  "cost_center",
+  "column_break_accounting",
+  "payment_account",
   "section_break_totals",
   "total_gross_weight",
   "total_net_weight",
@@ -100,6 +107,12 @@
    "label": "Customer Type"
   },
   {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
    "fieldname": "section_break_payment",
    "fieldtype": "Section Break",
    "label": "Payment"
@@ -131,6 +144,33 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_accounting",
+   "fieldtype": "Section Break",
+   "label": "Accounting"
+  },
+  {
+   "fieldname": "inventory_account",
+   "fieldtype": "Link",
+   "label": "Inventory Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_accounting",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_account",
+   "fieldtype": "Link",
+   "label": "Payment Account",
+   "options": "Account"
   },
   {
    "fieldname": "section_break_totals",

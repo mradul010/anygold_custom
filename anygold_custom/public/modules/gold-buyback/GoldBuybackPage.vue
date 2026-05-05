@@ -349,13 +349,13 @@
       </div>
     </div>
 
-    <!-- MODALS -->
+    <!-- MODALS (mobile) -->
     <DeductModal v-if="gb.dedModal.value" :item="gb.dedModal.value"
       @close="gb.dedModal.value = null"
       @apply="rows => { gb.applyDeds(gb.dedModal.value.id, rows); gb.dedModal.value = null }" />
     <NewCustModal v-if="gb.showNewCust.value"
       @close="gb.showNewCust.value = false"
-      @save="d => { gb.saveCust(d); gb.showNewCust.value = false }" />
+      @save="onMobileNewCustSave" />
     <OverageModal v-if="gb.ovgModal.value" :lines="ovgLines"
       @close="gb.ovgModal.value = false"
       @confirm="gb.confirmOvg()" />
@@ -445,13 +445,11 @@
       <GlEntriesSection />
     </div>
 
-    <!-- MODALS -->
+    <!-- MODALS (desktop) -->
+    <!-- NewCustModal is handled inside CustomerSection.vue via <teleport> for desktop. -->
     <DeductModal v-if="gb.dedModal.value" :item="gb.dedModal.value"
       @close="gb.dedModal.value = null"
       @apply="rows => { gb.applyDeds(gb.dedModal.value.id, rows); gb.dedModal.value = null }" />
-    <NewCustModal v-if="gb.showNewCust.value"
-      @close="gb.showNewCust.value = false"
-      @save="d => { gb.saveCust(d); gb.showNewCust.value = false }" />
     <OverageModal v-if="gb.ovgModal.value" :lines="ovgLines"
       @close="gb.ovgModal.value = false"
       @confirm="gb.confirmOvg()" />
@@ -485,6 +483,16 @@ import ReviewPage       from './views/ReviewPage.vue'
 import SubmittedPage    from './views/SubmittedPage.vue'
 
 const today = computed(() => new Date().toISOString().slice(0, 10))
+
+// Mobile new-customer save handler — receives the full custObj emitted by NewCustModal.
+const onMobileNewCustSave = (custObj) => {
+  gb.cust.value             = custObj
+  gb.search.value           = custObj.name
+  gb.showDD.value           = false
+  gb.showNewCust.value      = false
+  gb.locks.value            = []
+  gb.validationErrors.value = []
+}
 
 // Mobile balance display
 const mobileBalanceDisplay = computed(() => {

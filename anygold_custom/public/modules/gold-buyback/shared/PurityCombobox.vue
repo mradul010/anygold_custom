@@ -37,7 +37,10 @@
 import { ref, computed, watch } from 'vue'
 import { PURITY_LIST } from '../../../constants/index.js'
 
-const props = defineProps({ value: { type: String, default: '' } })
+const props = defineProps({
+  value:      { type: String, default: '' },
+  purityList: { type: Array,  default: () => [] }
+})
 const emit  = defineEmits(['change'])
 
 const inputRef = ref(null)
@@ -47,9 +50,11 @@ const ddStyle = ref({})
 
 watch(() => props.value, (v) => { text.value = v || '' })
 
+const effectiveList = computed(() => props.purityList.length ? props.purityList : PURITY_LIST)
+
 const filtered = computed(() => {
-  if (!text.value) return PURITY_LIST
-  return PURITY_LIST.filter(p => p.startsWith(text.value))
+  if (!text.value) return effectiveList.value
+  return effectiveList.value.filter(p => p.startsWith(text.value))
 })
 
 const openDD = () => {
@@ -80,7 +85,7 @@ const onInput = (e) => {
 const onFocus = (e) => { e.target.select(); openDD() }
 const onBlur  = () => {
   setTimeout(() => { open.value = false }, 150)
-  const match = PURITY_LIST.find(p => p === text.value)
+  const match = effectiveList.value.find(p => p === text.value)
   emit('change', match || text.value)
 }
 const onKeydown = (e) => {

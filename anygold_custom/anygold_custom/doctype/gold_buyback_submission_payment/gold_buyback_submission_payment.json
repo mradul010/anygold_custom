@@ -6,7 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "mode",
-  "amount"
+  "amount",
+  "account"
  ],
  "fields": [
   {
@@ -21,6 +22,12 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount"
+  },
+  {
+   "fieldname": "account",
+   "fieldtype": "Link",
+   "label": "Account",
+   "options": "Account"
   }
  ],
  "grid_page_length": 50,

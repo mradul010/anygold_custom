@@ -286,7 +286,18 @@ table.gl .cr { color: var(--red); text-align: right; font-weight: 500; }
 table.gl .dash { color: var(--text-subtle); text-align: right; }
 
 /* ── MODALS ── */
-.gb-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: flex; align-items: center; justify-content: center; }
+.gb-overlay { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.55) !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 16px !important; box-sizing: border-box !important; }
+
+/* New Customer modal overlay — used by CustomerSection.vue (desktop teleport) and NewCustModal.vue (mobile) */
+.gb-modal-overlay { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.55) !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 16px !important; box-sizing: border-box !important; }
+.gb-modal-box { background: var(--surface); border-radius: var(--radius); box-shadow: 0 24px 80px rgba(0,0,0,0.35); width: min(92vw, 600px); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.gb-modal-header { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.gb-modal-header h3 { font-size: 15px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gb-modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; padding: 2px 8px; border-radius: 4px; line-height: 1; transition: all 0.15s; }
+.gb-modal-close:hover { background: var(--bg); color: var(--text); }
+.gb-modal-body { padding: 18px; overflow-y: auto; flex: 1 1 0; min-height: 0; }
+.gb-modal-footer { padding: 14px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+
 .modal { background: var(--surface); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
 .modal-hdr { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .modal-hdr h3 { font-size: 14px; font-weight: 600; }
@@ -307,10 +318,25 @@ table.gl .dash { color: var(--text-subtle); text-align: right; }
 .ded-sum-row { display: flex; justify-content: space-between; font-size: 12px; }
 .ded-sum-row .lbl { color: var(--text-muted); }
 .ded-sum-row.net { font-size: 13px; font-weight: 700; color: var(--gold); }
+
+/* New Customer form helpers */
 .nc-f { margin-bottom: 12px; }
 .nc-f label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
-.nc-f input, .nc-f select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+.nc-f input, .nc-f select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; box-sizing: border-box; background: var(--surface); color: var(--text); }
 .nc-f input:focus, .nc-f select:focus { outline: none; border-color: var(--gold); }
+.nc-f .req { color: var(--red); margin-left: 2px; }
+.nc-section-divider { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle); padding: 10px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.nc-errors { margin-bottom: 12px; }
+.nc-error { background: var(--red-light, #fef2f2); color: var(--red, #dc2626); font-size: 12px; padding: 7px 10px; border-radius: var(--radius-sm); margin-bottom: 4px; }
+.nc-photo-upload { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nc-photo-upload:hover { border-color: var(--gold); background: var(--gold-light, #fef9ec); }
+.nc-photo-upload.has-file { border-color: var(--green, #16a34a); border-style: solid; background: var(--green-light, #f0fdf4); }
+.nc-photo-icon { font-size: 24px; line-height: 1; }
+.nc-photo-hint { font-size: 12px; color: var(--text-muted); }
+.nc-photo-name { font-size: 12px; color: var(--text); font-weight: 500; word-break: break-all; }
+.nc-uploading { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.nc-badge-malaysian { font-size: 11px; font-weight: 500; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; }
+.nc-badge-foreigner { font-size: 11px; font-weight: 500; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; }
 
 /* ── REVIEW / SUBMITTED ── */
 .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
