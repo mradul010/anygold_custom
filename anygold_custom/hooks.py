@@ -114,14 +114,24 @@ fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [["dt", "=", "Stock Entry Detail"]]
+    },
+
+    # ---------------- JOURNAL ENTRY ----------------
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "=", "Journal Entry"]]
     }
 
 ]
 
 doc_events = {
-    "Customer": {
-        "after_insert": "anygold_custom.api.customer.create_supplier_for_customer"
-    }
+    # Smart JE: auto-nets AR/AP on submit for dual-party AG Contacts
+    "Gold Buyback Submission": {
+        "on_submit": "anygold_custom.api.smart_je.fire_smart_je",
+    },
+    "Payment Entry": {
+        "on_submit": "anygold_custom.api.smart_je.fire_smart_je",
+    },
 }
 # Apps
 # ------------------

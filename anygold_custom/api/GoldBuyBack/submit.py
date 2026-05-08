@@ -5,23 +5,28 @@ import json
 import re
 
 
+_PUR_SERIES_KEY = "PUR-"
+_PUR_SERIES_START = 124  # first assignment will be 125
+
+
 @frappe.whitelist()
 def get_next_doc_no():
 	"""
 	Peek at the next Gold Buyback Submission document number without consuming it.
-	Reads the current counter from tabSeries and returns next = current + 1.
-	The actual name is assigned by Frappe on insert, so this is a preview only.
+	Returns PUR-DDMMYY-XXX using today's date and current counter + 1.
 	"""
 	from frappe.utils import now_datetime
-	year = str(now_datetime().year)
-	prefix = f"GBB-{year}-"
+	dt = now_datetime()
+	date_str = dt.strftime("%d%m%y")
 	# tabSeries has only `name` and `current` — no `creation` column.
 	# frappe.db.get_value adds ORDER BY creation and crashes on this table,
 	# so query it directly with raw SQL.
-	result = frappe.db.sql("SELECT `current` FROM `tabSeries` WHERE `name` = %s", (prefix,))
-	current = int(result[0][0]) if result else 0
+	result = frappe.db.sql(
+		"SELECT `current` FROM `tabSeries` WHERE `name` = %s", (_PUR_SERIES_KEY,)
+	)
+	current = int(result[0][0]) if result else _PUR_SERIES_START
 	next_seq = current + 1
-	return f"{prefix}{str(next_seq).zfill(5)}"
+	return f"PUR-{date_str}-{str(next_seq).zfill(3)}"
 
 
 @frappe.whitelist()
@@ -119,7 +124,9 @@ def submit_gold_buyback(data):
 			"edit_posting_datetime": 1 if data.get("edit_posting_datetime") else 0,
 			"item_not_in_hand": 1 if item_not_in_hand else 0,
 			# Customer
-			"customer": customer.get("name"),
+			# customer_id is the ERPNext Customer doc name (e.g. CUST-00001).
+			# name is the display name (e.g. "JOHN DOE") — used for customer_name only.
+			"customer": customer.get("customer_id") or customer.get("name"),
 			"customer_name": customer.get("name"),
 			"customer_ic": customer.get("ic"),
 			"customer_mobile": customer.get("mobile"),
@@ -161,7 +168,12 @@ def submit_gold_buyback(data):
 			if not item_code:
 				purity = item.get("purity") or ""
 				deds   = item.get("deds") or []
-				suffix = "EBTS" if deds else "N"
+				if item.get("is_white_gold"):
+					suffix = "WG"
+				elif deds:
+					suffix = "EBTS"
+				else:
+					suffix = "N"
 				item_code = f"WS-{purity}-{suffix}" if purity else ""
 			if not item_code or not frappe.db.exists("Item", item_code):
 				frappe.throw(_("Item {0} not found in Item master. Please create it before submitting.").format(item_code or _("unknown")))

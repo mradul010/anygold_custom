@@ -1,14 +1,16 @@
 /**
  * Resolve the ERPNext Item Code for a Gold Buyback line.
  *
- * WS-{purity}-N    → clean item, no deductions
- * WS-{purity}-EBTS → item with impurities / deductions
+ * WS-{purity}-WG   → white gold (overrides deduction suffix)
+ * WS-{purity}-EBTS → yellow gold with deductions
+ * WS-{purity}-N    → yellow gold, clean
  *
  * This is the single source of truth for item code logic on the frontend.
- * Call it whenever purity changes or deductions are added/removed.
+ * Call it whenever purity, deductions, or isWhiteGold changes.
  */
-export function resolveGoldBuybackItemCode(purity, deds) {
+export function resolveGoldBuybackItemCode(purity, deds, isWhiteGold = false) {
   if (!purity) return ''
+  if (isWhiteGold) return `WS-${purity}-WG`
   const suffix = deds && deds.length > 0 ? 'EBTS' : 'N'
   return `WS-${purity}-${suffix}`
 }

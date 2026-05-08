@@ -11,7 +11,8 @@ const mkItem = (id, prefill = false) => ({
   id,
   desc: '',
   purity: prefill ? '916' : '',
-  item_code: prefill ? resolveGoldBuybackItemCode('916', []) : '',
+  is_white_gold: false,
+  item_code: prefill ? resolveGoldBuybackItemCode('916', [], false) : '',
   gross: 0,
   deds: [],       // [{ type, w, desc }]
   net: 0,
@@ -208,7 +209,10 @@ export function useGoldBuyback() {
         }
       })
       bagOptions.value = (res.message || []).map(w => w.name)
-      if (bagOptions.value.length) defBag.value = bagOptions.value[0]
+      if (bagOptions.value.length) {
+        const mainBag = bagOptions.value.find(b => b.toLowerCase().includes('main bag'))
+        defBag.value = mainBag || bagOptions.value[0]
+      }
     } catch (e) {
       console.warn('Failed to fetch bag options', e)
     }
@@ -223,6 +227,17 @@ export function useGoldBuyback() {
       purityOptions.value = res.message || []
     } catch (e) {
       console.warn('Failed to fetch purity options, using defaults', e)
+    }
+  }
+
+  const refreshPurityList = async () => {
+    try {
+      const res = await frappe.call({
+        method: 'anygold_custom.api.GoldBuyBack.items.get_purity_master'
+      })
+      purityOptions.value = res.message || []
+    } catch (e) {
+      console.warn('Failed to refresh purity options', e)
     }
   }
 
@@ -452,13 +467,14 @@ export function useGoldBuyback() {
       if (item.id !== id) return item
       const u = { ...item, [field]: val }
       if (field === 'purity') {
-        // Recalculate item code whenever purity changes.
-        u.item_code = resolveGoldBuybackItemCode(val, item.deds)
-        // Clear mismatched rate lock.
+        u.item_code = resolveGoldBuybackItemCode(val, item.deds, item.is_white_gold)
         if (item.lockId) {
           const lk = locks.value.find(l => l.id === item.lockId)
           if (lk && lk.purity !== val) { u.lockId = null; u.rate = 0; u.amount = 0 }
         }
+      }
+      if (field === 'is_white_gold') {
+        u.item_code = resolveGoldBuybackItemCode(item.purity, item.deds, val)
       }
       return u
     })
@@ -508,8 +524,7 @@ export function useGoldBuyback() {
       if (item.id !== id) return item
       const net = item.gross || 0
       const amt = item.rate > 0 ? parseFloat((net * item.rate).toFixed(2)) : item.amount
-      // No deductions → suffix switches back to -N
-      return { ...item, deds: [], net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, []) }
+      return { ...item, deds: [], net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, [], item.is_white_gold) }
     })
   }
 
@@ -519,8 +534,7 @@ export function useGoldBuyback() {
       const deds = rows.reduce((s, r) => s + (parseFloat(r.w) || 0), 0)
       const net = Math.max(0, (item.gross || 0) - deds)
       const amt = item.rate > 0 ? parseFloat((net * item.rate).toFixed(2)) : item.amount
-      // Deductions present → suffix switches to -EBTS
-      return { ...item, deds: rows, net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, rows) }
+      return { ...item, deds: rows, net, amount: amt, item_code: resolveGoldBuybackItemCode(item.purity, rows, item.is_white_gold) }
     })
   }
 
@@ -573,7 +587,7 @@ export function useGoldBuyback() {
       id: newId,
       desc: item.desc ? item.desc + ' (excess)' : '(excess)',
       purity: item.purity,
-      item_code: resolveGoldBuybackItemCode(item.purity, []), // excess has no deds
+      item_code: resolveGoldBuybackItemCode(item.purity, [], item.is_white_gold), // excess has no deds
       gross: parseFloat(excess.toFixed(3)),
       net:   parseFloat(excess.toFixed(3)),
       deds: [], rate: 0, amount: 0,
@@ -687,7 +701,8 @@ export function useGoldBuyback() {
           id: i.id,
           desc: i.desc,
           purity: i.purity,
-          item_code: i.item_code || resolveGoldBuybackItemCode(i.purity, i.deds),
+          item_code: i.item_code || resolveGoldBuybackItemCode(i.purity, i.deds, i.is_white_gold),
+          is_white_gold: i.is_white_gold || false,
           gross: i.gross || 0,
           net: i.net || i.gross || 0,
           deds: i.deds || [],
@@ -813,6 +828,7 @@ export function useGoldBuyback() {
     applyLock, removeLock, keepRate, splitExcess, getLockRem,
     addMixRow, removeMixRow, updateMixRow,
     goReview, confirmOvg, goSubmit, newPurchase,
+    refreshPurityList,
 
     // ── helpers (exposed for child components) ──
     fmtRM, fmtWt, fmtWtRaw, dedNoteText,

@@ -17,7 +17,7 @@
     </div>
     <teleport to="body">
       <div
-        v-if="open && filtered.length"
+        v-if="open && (filtered.length || true)"
         class="combobox-dd"
         :style="ddStyle"
       >
@@ -28,14 +28,27 @@
           :class="{ active: p === text }"
           @mousedown.prevent="commit(p)"
         >{{ p }}</div>
+        <!-- New Purity shortcut -->
+        <div
+          class="combobox-opt purity-new-opt"
+          @mousedown.prevent="openNewPurity"
+        >+ New Purity…</div>
       </div>
     </teleport>
+
+    <!-- New Purity modal -->
+    <NewPurityModal
+      v-if="showNewPurity"
+      @close="showNewPurity = false"
+      @created="onPurityCreated"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { PURITY_LIST } from '../../../constants/index.js'
+import NewPurityModal from './NewPurityModal.vue'
 
 const props = defineProps({
   value:      { type: String, default: '' },
@@ -43,10 +56,11 @@ const props = defineProps({
 })
 const emit  = defineEmits(['change'])
 
-const inputRef = ref(null)
-const text = ref(props.value || '')
-const open = ref(false)
-const ddStyle = ref({})
+const inputRef      = ref(null)
+const text          = ref(props.value || '')
+const open          = ref(false)
+const ddStyle       = ref({})
+const showNewPurity = ref(false)
 
 watch(() => props.value, (v) => { text.value = v || '' })
 
@@ -65,7 +79,7 @@ const openDD = () => {
       top:   rect.bottom + 2 + 'px',
       left:  rect.left + 'px',
       width: rect.width + 'px',
-      maxHeight: '140px',
+      maxHeight: '180px',
       zIndex: 500
     }
   }
@@ -76,6 +90,19 @@ const commit = (v) => {
   text.value = v
   emit('change', v)
   open.value = false
+}
+
+const openNewPurity = () => {
+  open.value = false
+  showNewPurity.value = true
+}
+
+const onPurityCreated = (purity) => {
+  showNewPurity.value = false
+  // Select the newly created purity immediately
+  commit(purity.purity_code)
+  // Notify parent composable so it refreshes the purity list
+  emit('purity-created', purity)
 }
 
 const onInput = (e) => {
@@ -95,3 +122,12 @@ const onKeydown = (e) => {
   if (e.key === 'Escape') { open.value = false; e.target.blur() }
 }
 </script>
+
+<style scoped>
+.purity-new-opt {
+  color: var(--primary-color, #c59a2f);
+  font-weight: 600;
+  border-top: 1px solid var(--border-color);
+  font-size: 12px;
+}
+</style>

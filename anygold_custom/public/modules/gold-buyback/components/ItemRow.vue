@@ -1,46 +1,58 @@
 <template>
   <tr class="item-row">
-    <!-- # -->
-    <td class="row-num" style="width: 32px; text-align: center">{{ idx + 1 }}</td>
 
-    <!-- DESCRIPTION — fixed dropdown, no free text -->
-    <td style="position: relative; padding: 5px 4px">
-      <div style="position: relative">
-        <select
-          ref="descRef"
-          class="tbl-input desc"
-          style="text-transform: uppercase; width: 100%; appearance: none; padding-right: 20px; cursor: pointer"
-          :value="item.desc"
-          @change="e => gb.updItem(item.id, 'desc', e.target.value)"
-        >
-          <option value="">— Select —</option>
-          <option v-for="d in DESC_OPTIONS" :key="d" :value="d">{{ d }}</option>
-        </select>
-        <span style="position: absolute; right: 7px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--text-subtle); pointer-events: none">▼</span>
+    <!-- # -->
+    <td style="width:30px; vertical-align:top; padding:5px 4px; text-align:center">
+      <div style="display:flex; align-items:center; justify-content:center; min-height:30px">
+        <span class="row-num">{{ idx + 1 }}</span>
       </div>
     </td>
 
-    <!-- PURITY + item_code badge -->
-    <td style="width: 80px; padding: 5px 4px">
-      <PurityCombobox
-        :value="item.purity"
-        :purityList="purityList"
-        @change="v => gb.updItem(item.id, 'purity', v)"
-      />
-      <!-- Item code badge — small indicator below purity -->
-      <div
-        v-if="item.item_code"
-        style="font-size: 9px; color: var(--text-subtle); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 76px"
-        :title="item.item_code"
-      >{{ item.item_code }}</div>
+    <!-- DESCRIPTION -->
+    <td style="position:relative; vertical-align:top; padding:5px 4px">
+      <div style="display:flex; align-items:center; min-height:30px">
+        <DescCombobox
+          style="flex:1; min-width:0"
+          :value="item.desc"
+          :autoFocus="isLastAdded"
+          @change="v => gb.updItem(item.id, 'desc', v)"
+        />
+      </div>
+    </td>
+
+    <!-- PURITY -->
+    <td style="width:90px; vertical-align:top; padding:5px 4px">
+      <!-- control row -->
+      <div style="display:flex; align-items:center; min-height:30px">
+        <PurityCombobox
+          style="flex:1; min-width:0"
+          :value="item.purity"
+          :purityList="purityList"
+          @change="v => gb.updItem(item.id, 'purity', v)"
+          @purity-created="gb.refreshPurityList && gb.refreshPurityList()"
+        />
+      </div>
+      <!-- WG checkbox -->
+      <div style="margin-top:3px">
+        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:var(--text-muted); cursor:pointer; user-select:none; white-space:nowrap">
+          <input
+            type="checkbox"
+            :checked="item.is_white_gold"
+            @change="e => gb.updItem(item.id, 'is_white_gold', e.target.checked)"
+            style="width:11px; height:11px; cursor:pointer; margin:0"
+          />
+          WG
+        </label>
+      </div>
     </td>
 
     <!-- GROSS WEIGHT -->
-    <td style="width: 120px; padding: 5px 4px">
-      <div style="display: flex; gap: 4px; align-items: center">
+    <td style="width:130px; vertical-align:top; padding:5px 4px">
+      <div style="display:flex; align-items:center; gap:4px; min-height:30px">
         <input
           type="text"
           class="tbl-input"
+          style="flex:1; min-width:0"
           placeholder="0.000"
           :value="gDisp"
           @input="e => { gDisp = e.target.value; gCur = e.target.value; gDirty = true }"
@@ -61,32 +73,36 @@
     </td>
 
     <!-- NET WEIGHT -->
-    <td style="width: 100px; padding-left: 8px">
-      <span :class="['net-cell', hasDed ? 'deducted' : '']">{{ fmtWtRaw(item.net) }}</span>
+    <td style="width:90px; vertical-align:top; padding:5px 4px 5px 8px">
+      <div style="display:flex; align-items:center; min-height:30px">
+        <span :class="['net-cell', hasDed ? 'deducted' : '']">{{ fmtWtRaw(item.net) }}</span>
+      </div>
     </td>
 
     <!-- RATE -->
-    <td style="width: 110px; padding: 5px 4px; text-align: right">
-      <input
-        type="text"
-        :class="['tbl-input', isLocked ? 'locked' : '']"
-        style="width: 100%"
-        placeholder="0.00"
-        :value="rDisp"
-        :readonly="isLocked"
-        @input="e => { if (!isLocked) { rDisp = e.target.value; rCur = e.target.value; rDirty = true } }"
-        @blur="onRateBlur"
-        @keydown.enter="e => e.target.blur()"
-      />
+    <td style="width:110px; vertical-align:top; padding:5px 4px">
+      <div style="display:flex; align-items:center; min-height:30px">
+        <input
+          type="text"
+          :class="['tbl-input', isLocked ? 'locked' : '']"
+          style="width:100%"
+          placeholder="0.00"
+          :value="rDisp"
+          :readonly="isLocked"
+          @input="e => { if (!isLocked) { rDisp = e.target.value; rCur = e.target.value; rDirty = true } }"
+          @blur="onRateBlur"
+          @keydown.enter="e => e.target.blur()"
+        />
+      </div>
     </td>
 
     <!-- LOCK ICON (dealer only) -->
-    <td v-if="gb.custIsDealer.value" style="width: 28px; text-align: center; vertical-align: middle; padding: 0 2px">
-      <div style="position: relative">
+    <td v-if="gb.custIsDealer.value" style="width:32px; vertical-align:top; padding:5px 2px">
+      <div style="display:flex; align-items:center; justify-content:center; min-height:30px; position:relative">
         <button
           v-if="hasLock || isLocked"
           :class="['lock-icon-btn', isLocked ? 'assigned' : '']"
-          style="margin: 0"
+          style="margin:0"
           @click="toggleLockPop"
         >🔒</button>
         <LockPopover
@@ -100,26 +116,28 @@
         />
       </div>
     </td>
-    <td v-else style="width: 28px"></td>
+    <td v-else style="width:32px; vertical-align:top; padding:5px 2px"></td>
 
     <!-- AMOUNT -->
-    <td style="width: 130px; padding: 5px 4px; text-align: right; padding-right: 8px">
-      <input
-        type="text"
-        :class="['tbl-input', isLocked ? 'locked' : '']"
-        style="width: 100%"
-        placeholder="0.00"
-        :value="aDisp"
-        :readonly="isLocked"
-        @input="e => { if (!isLocked) { aDisp = e.target.value; aCur = e.target.value; aDirty = true } }"
-        @blur="onAmountBlur"
-        @keydown.enter="e => e.target.blur()"
-      />
+    <td style="width:120px; vertical-align:top; padding:5px 8px 5px 4px">
+      <div style="display:flex; align-items:center; min-height:30px">
+        <input
+          type="text"
+          :class="['tbl-input', isLocked ? 'locked' : '']"
+          style="width:100%"
+          placeholder="0.00"
+          :value="aDisp"
+          :readonly="isLocked"
+          @input="e => { if (!isLocked) { aDisp = e.target.value; aCur = e.target.value; aDirty = true } }"
+          @blur="onAmountBlur"
+          @keydown.enter="e => e.target.blur()"
+        />
+      </div>
     </td>
 
     <!-- BAG + REMOVE -->
-    <td style="text-align: center; white-space: nowrap; width: 56px">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 4px; position: relative">
+    <td style="width:60px; vertical-align:top; padding:5px 4px">
+      <div style="display:flex; align-items:center; justify-content:center; gap:4px; min-height:30px; position:relative">
         <button
           v-if="gb.showBag.value"
           :class="['bag-row-btn', item.bag ? 'set' : '']"
@@ -134,21 +152,22 @@
         <button class="rm-btn" @click="gb.removeItem(item.id)">✕</button>
       </div>
     </td>
+
   </tr>
 
   <!-- BAG OVERRIDE SUB-ROW -->
-  <tr v-if="gb.showBag.value && item.bag && item.bag !== gb.defBag.value" style="border-bottom: 1px solid var(--border)">
+  <tr v-if="gb.showBag.value && item.bag && item.bag !== gb.defBag.value" style="border-bottom:1px solid var(--border)">
     <td></td>
-    <td colspan="7" style="padding: 2px 4px 8px; font-size: 11px; color: var(--text-muted)">
+    <td colspan="7" style="padding:2px 4px 8px; font-size:11px; color:var(--text-muted)">
       ↳ Bag: {{ item.bag }}
     </td>
     <td></td>
   </tr>
 
   <!-- DEDUCTION SUB-ROW -->
-  <tr v-if="dedNote" style="border-bottom: 1px solid var(--border)">
+  <tr v-if="dedNote" style="border-bottom:1px solid var(--border)">
     <td></td>
-    <td colspan="7" style="padding: 2px 4px 8px; font-size: 11px; color: var(--text-muted)">
+    <td colspan="7" style="padding:2px 4px 8px; font-size:11px; color:var(--text-muted)">
       ↳ Deductions: {{ dedNote }}
     </td>
     <td></td>
@@ -167,14 +186,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, inject, nextTick } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { fmtRM, fmtWtRaw, fmtOnBlur, dedNoteText } from '../../../utils/formatters.js'
-import { DESC_SUGGESTIONS } from '../../../constants/index.js'
 import PurityCombobox from '../shared/PurityCombobox.vue'
+import DescCombobox   from '../shared/DescCombobox.vue'
 import LockPopover    from '../shared/LockPopover.vue'
 import BagPopover     from '../shared/BagPopover.vue'
-
-const DESC_OPTIONS = DESC_SUGGESTIONS
 
 const props = defineProps({
   item:        { type: Object,  required: true },
@@ -195,7 +212,6 @@ const purityList = computed(() =>
 // ── LOCAL DISPLAY STATE ──
 // Separate local state so the user can type freely without state updates
 // resetting the cursor or value mid-edit.
-const descRef = ref(null)
 let gDisp = ref(props.item.gross  > 0 ? fmtWtRaw(props.item.gross)  : '')
 let rDisp = ref(props.item.rate   > 0 ? fmtRM(props.item.rate)      : '')
 let aDisp = ref(props.item.amount > 0 ? fmtRM(props.item.amount)    : '')
@@ -212,11 +228,6 @@ let aDirty = ref(false)
 watch(() => props.item.gross,  (v) => { if (!gDirty.value) { gDisp.value = v > 0 ? fmtWtRaw(v) : ''; gCur.value = gDisp.value } })
 watch(() => props.item.rate,   (v) => { if (!rDirty.value) { rDisp.value = v > 0 ? fmtRM(v)     : ''; rCur.value = rDisp.value } })
 watch(() => props.item.amount, (v) => { if (!aDirty.value) { aDisp.value = v > 0 ? fmtRM(v)     : ''; aCur.value = aDisp.value } })
-
-// Auto-focus description select on new row
-if (props.isLastAdded) {
-  nextTick(() => { if (descRef.value) descRef.value.focus() })
-}
 
 // ── COMPUTED ──
 const hasDed   = computed(() => props.item.deds && props.item.deds.length > 0)

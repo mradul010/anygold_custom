@@ -25,15 +25,15 @@
               <div v-else class="cust-scroll">
                 <div
                   v-for="c in customers"
-                  :key="c.customer_id"
+                  :key="c.ag_contact_id"
                   class="cust-item"
                   @mousedown.prevent="pickCustomer(c)"
                 >
                   <div class="cust-name">{{ c.name }}</div>
                   <div class="cust-meta">
-                    {{ c.nationality === 'Malaysian' ? 'IC' : 'PP' }}:
-                    {{ c.ic || c.passport || '—' }} · {{ c.type }}
+                    {{ c.id_label || 'ID' }}: {{ c.id_number || '—' }} · {{ c.type }}
                     <span v-if="c.advance > 0" style="color: var(--green); font-weight: 600"> · Advance: RM {{ fmtRM(c.advance) }}</span>
+                    <span v-if="c.advance < 0" style="color: var(--red); font-weight: 600"> · Owes: RM {{ fmtRM(Math.abs(c.advance)) }}</span>
                     <span v-if="c.locks > 0" style="color: var(--gold); font-weight: 600"> · 🔒 {{ c.locks }} Rate Lock{{ c.locks > 1 ? 's' : '' }}</span>
                   </div>
                 </div>
@@ -46,9 +46,9 @@
 
         <div class="grid-2" style="gap: 10px; margin-bottom: 10px">
           <div class="field">
-            <label>{{ gb.cust.value?.nationality === 'Non-Malaysian / Foreigner' ? 'Passport No.' : 'IC Number' }}</label>
+            <label>{{ gb.cust.value?.id_type || 'IC / Passport' }}</label>
             <input type="text" class="field-input"
-              :value="gb.cust.value?.nationality === 'Non-Malaysian / Foreigner' ? (gb.cust.value?.passport || '') : (gb.cust.value?.ic || '')"
+              :value="gb.cust.value?.id_number || ''"
               placeholder="Auto-filled" disabled />
           </div>
           <div class="field">
@@ -249,8 +249,10 @@
             <input
               type="text"
               class="field-input"
-              v-model="form.ic_number"
+              :value="form.ic_number"
+              @input="onIcInput"
               placeholder="e.g. 900101-14-1234"
+              maxlength="14"
               autocomplete="off"
             />
           </div>
@@ -287,8 +289,10 @@
             <input
               type="tel"
               class="field-input"
-              v-model="form.mobile_no"
-              placeholder="e.g. 0123456789"
+              :value="form.mobile_no"
+              @input="onMobileInput"
+              placeholder="e.g. 012-345 6789"
+              maxlength="13"
               autocomplete="off"
             />
           </div>
@@ -365,22 +369,30 @@ const loadedOnce         = ref(false)
 const searchLoading      = ref(false)
 let   searchDebounceTimer = null
 
-/** Map a raw Customer doc row to the app's customer shape. */
+/** Map a raw AG Contact row to the app's customer shape. */
 const mapCustomer = async (c) => {
-  const balance = await getCustomerBalance(c.name)
+  const balance  = await getContactBalance(c.name)   // c.name = AGC-000001
+  const idLabel  = c.id_type === 'Malaysian IC' ? 'IC'
+                 : c.id_type === 'Passport'     ? 'PP'
+                 : c.id_type === 'SSM Number'   ? 'SSM'
+                 : 'ID'
   return {
-    name:        c.customer_name          || c.name,
-    customer_id: c.name,
-    ic:          c.malaysian_id           || '',
-    passport:    c.other_id_number        || '',
-    nationality: c.customer_nationality   || 'Malaysian',
-    country:     c.other_id_type          || '',
-    type:        c.customer_group         || 'Individual',
-    mobile:      c.mobile_no              || '',
-    bank:        c.bank_name              || '',
-    acc:         c.bank_account_number    || '',
-    advance:     balance,
-    locks:       0,
+    name:            c.display_name          || c.name,
+    ag_contact_id:   c.name,                           // AGC-000001 — for balance lookups
+    customer_id:     c.linked_customer       || '',    // ERPNext Customer name — used by GBB submit
+    linked_supplier: c.linked_supplier       || '',    // ERPNext Supplier name — used by Smart JE
+    id_type:         c.id_type               || '',
+    id_number:       c.id_number             || '',
+    id_label:        idLabel,
+    ic:              c.id_type === 'Malaysian IC' ? (c.id_number || '') : '',
+    passport:        c.id_type !== 'Malaysian IC' ? (c.id_number || '') : '',
+    nationality:     c.id_type === 'Malaysian IC' ? 'Malaysian' : 'Non-Malaysian / Foreigner',
+    type:            c.entity_type           || 'Individual',
+    mobile:          c.phone_primary         || '',
+    bank:            c.bank_name             || '',
+    acc:             c.bank_account_number   || '',
+    advance:         balance,
+    locks:           0,
   }
 }
 
@@ -388,14 +400,14 @@ const fetchCustomers = async (query = '') => {
   searchLoading.value = true
   try {
     const res = await frappe.call({
-      method: 'anygold_custom.api.GoldBuyBack.customer.search_goldbuyback_customers',
-      args:   { query, limit: 20 },
+      method: 'anygold_custom.api.ag_contact.search_ag_contacts',
+      args:   { txt: query },
     })
-    const raw     = res.message || []
+    const raw = res.message || []
     customers.value = await Promise.all(raw.map(mapCustomer))
     if (!query) loadedOnce.value = true
   } catch (e) {
-    console.warn('Customer search failed', e)
+    console.warn('AG Contact search failed', e)
     customers.value = []
   } finally {
     searchLoading.value = false
@@ -428,13 +440,15 @@ watch(() => gb.showDD.value, (isOpen) => {
 // PICK CUSTOMER
 // ════════════════════════════════════════════════════════════════
 
-const getCustomerBalance = async (customerDocName) => {
+/** Returns net balance for an AG Contact. Positive = AR (they owe us), negative = AP (we owe them). */
+const getContactBalance = async (agContactId) => {
+  if (!agContactId) return 0
   try {
     const res = await frappe.call({
-      method: 'erpnext.accounts.utils.get_balance_on',
-      args:   { party_type: 'Customer', party: customerDocName },
+      method: 'anygold_custom.api.ag_contact.get_unified_balance',
+      args:   { ag_contact: agContactId },
     })
-    return res.message || 0
+    return (res.message || {}).balance || 0
   } catch {
     return 0
   }
@@ -499,6 +513,33 @@ const form = reactive({
 // ── Computed helpers ──
 const isMalaysian    = computed(() => form.nationality === 'Malaysian')
 const photoLabel     = computed(() => isMalaysian.value ? 'Customer IC Photo (Optional)' : 'Passport / ID Photo (Optional)')
+
+// ── IC Number auto-format: XXXXXX-XX-XXXX ──
+const formatIc = (raw) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 12)
+  if (digits.length <= 6)  return digits
+  if (digits.length <= 8)  return digits.slice(0, 6) + '-' + digits.slice(6)
+  return digits.slice(0, 6) + '-' + digits.slice(6, 8) + '-' + digits.slice(8)
+}
+
+const onIcInput = (e) => {
+  form.ic_number = formatIc(e.target.value)
+  e.target.value = form.ic_number
+}
+
+// ── Mobile number auto-format: xxx-xxx xxxx (10-digit) / xxx-xxxx xxxx (11-digit) ──
+const formatMobile = (raw) => {
+  const d = raw.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return d.slice(0, 3) + '-' + d.slice(3)
+  if (d.length === 11) return d.slice(0, 3) + '-' + d.slice(3, 7) + ' ' + d.slice(7)
+  return d.slice(0, 3) + '-' + d.slice(3, 6) + ' ' + d.slice(6)
+}
+
+const onMobileInput = (e) => {
+  form.mobile_no = formatMobile(e.target.value)
+  e.target.value = form.mobile_no
+}
 
 // ── Nationality change: clear irrelevant fields ──
 const onNationalityChange = () => {
@@ -583,13 +624,13 @@ const buildPayload = () => {
     customer_name:       form.customer_name.trim().toUpperCase(),
     nationality:         form.nationality,
     customer_type:       form.customer_type,
-    mobile_no:           form.mobile_no.trim(),
+    mobile_no:           formatMobile(form.mobile_no.trim()),
     bank_name:           form.bank_name.trim(),
     bank_account_number: form.bank_account_number.trim(),
     customer_photo:      form.photo_url,
   }
   if (isMalaysian.value) {
-    p.malaysian_id    = form.ic_number.trim()
+    p.malaysian_id    = formatIc(form.ic_number.trim())
     p.other_id_type   = ''
     p.other_id_number = ''
   } else {
@@ -609,49 +650,57 @@ const submitNewCustomer = async () => {
 
   try {
     const res  = await frappe.call({
-      method: 'anygold_custom.api.GoldBuyBack.customer.create_goldbuyback_customer',
+      method: 'anygold_custom.api.ag_contact.create_ag_contact_from_gbb',
       args:   { data: JSON.stringify(buildPayload()) },
     })
     const data = res.message
 
     if (!data?.success) {
-      formErrors.value = [data?.message || 'Failed to save customer.']
+      formErrors.value = [data?.message || 'Failed to save contact.']
       return
     }
 
     if (data.duplicate) {
       frappe.show_alert({ message: data.message, indicator: 'orange' }, 6)
     } else {
-      frappe.show_alert({ message: 'Customer saved successfully!', indicator: 'green' }, 4)
+      frappe.show_alert({ message: 'Contact created successfully!', indicator: 'green' }, 4)
     }
 
-    // Map backend response → app customer shape
-    // _customer_response returns: nationality, ic_number, passport_number, country, bank_name, bank_account_number
-    const c = data.customer
+    // Map AG Contact response → app customer shape
+    const c       = data.contact
+    const idLabel = c.id_type === 'Malaysian IC' ? 'IC'
+                  : c.id_type === 'Passport'     ? 'PP'
+                  : c.id_type === 'SSM Number'   ? 'SSM'
+                  : 'ID'
     const custObj = {
-      name:        c.customer_name          || '',
-      customer_id: c.name,
-      ic:          c.ic_number              || '',
-      passport:    c.passport_number        || '',
-      nationality: c.nationality            || 'Malaysian',
-      country:     c.country               || '',
-      type:        c.customer_group         || form.customer_type,
-      mobile:      c.mobile_no              || form.mobile_no,
-      bank:        c.bank_name              || '',
-      acc:         c.bank_account_number    || '',
-      advance:     0,
-      locks:       0,
+      name:            c.display_name        || c.customer_name || '',
+      ag_contact_id:   c.name                || '',
+      customer_id:     c.linked_customer     || '',
+      linked_supplier: c.linked_supplier     || '',
+      id_type:         c.id_type             || '',
+      id_number:       c.id_number           || '',
+      id_label:        idLabel,
+      ic:              c.ic_number           || '',
+      passport:        c.passport_number     || '',
+      nationality:     c.nationality         || 'Malaysian',
+      type:            c.entity_type         || form.customer_type,
+      mobile:          c.phone_primary       || c.mobile_no || form.mobile_no,
+      bank:            c.bank_name           || '',
+      acc:             c.bank_account_number || '',
+      advance:         0,
+      locks:           0,
     }
 
     // Select the new customer
     pickCustomer(custObj)
 
     // Prepend to the customer list so it shows immediately if DD reopened
-    if (!customers.value.find(x => x.customer_id === custObj.customer_id)) {
+    if (!customers.value.find(x => x.ag_contact_id === custObj.ag_contact_id)) {
       customers.value = [custObj, ...customers.value]
     }
     loadedOnce.value = false // force a fresh fetch next DD open
 
+    saving.value = false  // clear before close so the guard doesn't block
     closeNewCustModal()
 
   } catch (err) {
